@@ -61,6 +61,23 @@ class ShiftPagiDuring extends Page
 
     public function submit()
     {
+        $userId = Auth::id();
+        // validate has submitted today
+        $hasSubmittedToday = AktivitasShift::query()
+            ->where('user_id', $userId)
+            ->whereDate('created_at', now()->today())
+            ->where('shift_id', 1)
+            ->exists();
+        if ($hasSubmittedToday) {
+            Notification::make()
+                ->title('Gagal Submit')
+                ->body('Anda Telah Melakukan Submit Shift Pagi Hari Ini. Submit hanya diperbolehkan sekali per hari.')
+                ->danger()
+                ->send();
+            return; // Menghentikan proses submit
+        }
+        // ---------------------------------------------
+
         try {
             $validatedData = $this->form->getState();
         } catch (\Exception $e) {

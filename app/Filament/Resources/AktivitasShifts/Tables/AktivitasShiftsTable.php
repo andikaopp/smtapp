@@ -19,6 +19,8 @@ class AktivitasShiftsTable
                     ->searchable(),
                 TextColumn::make('shift.name')
                     ->searchable(),
+                TextColumn::make('checklist.kategoriAktivitasShift.kategori')
+                    ->searchable(),
                 TextColumn::make('checklist.todo')
                     ->limit(50,'...')
                     ->wrap(true)

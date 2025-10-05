@@ -7,37 +7,49 @@ use App\Models\Checklist;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class ShiftPagiDuring extends Page
+class ShiftPagiPre extends Page
 {
     use InteractsWithForms;
 
     protected static string|null|\BackedEnum $navigationIcon = 'heroicon-o-sun';
-    protected string $view = 'filament.pages.shift-pagi-during';
-    protected static ?string $title = 'Shift Pagi - During Shift';
-    protected static ?string $navigationLabel = 'Shift Pagi During';
+    protected static ?string $title = 'Shift Pagi - Pre Shift';
+    protected static ?string $navigationLabel = 'Shift Pagi Pre';
     protected static string|null|\UnitEnum $navigationGroup = 'Shift Pagi';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
+    protected string $view = 'filament.pages.shift-pagi-pre';
 
     public ?array $data = [];
     public bool $hasSubmittedToday = false;
     public function mount(): void
     {
-        // Pengecekan status submit (Sama seperti di awal submit())
-        $this->hasSubmittedToday = AktivitasShift::query()
-            ->where('user_id', Auth::id())
-            ->whereDate('created_at', now()->today())
-            ->where('shift_id', 1) // Sesuaikan dengan ID shift Anda
-            ->exists();
+        $userId = Auth::id();
+        $kategoriId = 1; // ID Kategori untuk Pre-Shift (sesuai getFormSchema)
+
+        // 1. Hitung total checklist yang harus diisi
+        $requiredChecklistCount = Checklist::where('kategori_aktivitas_shift_id', $kategoriId)->count();
+
+        // 2. Hitung jumlah checklist yang sudah diisi user hari ini,
+        //    dengan JOIN ke tabel `checklists` untuk memfilter berdasarkan kategori.
+        $submittedChecklistCount = AktivitasShift::query()
+            ->where('aktivitas_shifts.user_id', $userId)
+            ->whereDate('aktivitas_shifts.created_at', now()->today())
+            ->where('aktivitas_shifts.shift_id', 1) // Sesuaikan dengan shift_id yang Anda gunakan
+            ->join('checklists', 'aktivitas_shifts.checklist_id', '=', 'checklists.id')
+            ->where('checklists.kategori_aktivitas_shift_id', $kategoriId)
+            ->count();
+
+        // 3. Cek apakah jumlah yang diisi sudah sama dengan yang diperlukan
+        $this->hasSubmittedToday = ($submittedChecklistCount > 0) && ($submittedChecklistCount === $requiredChecklistCount);
 
         // Isi form hanya jika belum submit
         if (!$this->hasSubmittedToday) {
@@ -55,9 +67,7 @@ class ShiftPagiDuring extends Page
                     ->description('Pengecekan ini hanya dapat dilakukan sekali sehari.')
                     ->schema([
                         TextEntry::make('submission_message')
-                            ->badge()
-                            ->label('Anda sudah berhasil melakukan submit Checklist During Shift Pagi untuk hari ini (' . now()->translatedFormat('d F Y') . '). Terima kasih!')
-                            ->color('primary')
+                            ->label('Anda sudah berhasil melakukan submit Checklist Pre Shift Pagi untuk hari ini (' . now()->translatedFormat('d F Y') . '). Terima kasih!')
                     ])
                     ->aside(false)
                     ->heading('Pengisian Checklist Complete')
@@ -77,7 +87,7 @@ class ShiftPagiDuring extends Page
                 ])
                 ->columns(2)
                 ->default(
-                    Checklist::query()->where('kategori_aktivitas_shift_id', 2)
+                    Checklist::query()->where('kategori_aktivitas_shift_id', 1)
                         ->get(['id', 'todo'])
                         ->map(fn ($item) => [
                             'todo' => $item->todo,
@@ -96,16 +106,23 @@ class ShiftPagiDuring extends Page
     public function submit()
     {
         $userId = Auth::id();
-        // validate has submitted today
-        $hasSubmittedToday = AktivitasShift::query()
-            ->where('user_id', $userId)
-            ->whereDate('created_at', now()->today())
-            ->where('shift_id', 1)
-            ->exists();
-        if ($hasSubmittedToday) {
+        $kategoriId = 1; // ID Kategori untuk Pre-Shift
+
+        // --- VALIDASI KELENGKAPAN SUBMIT (diulang dari mount untuk keamanan) ---
+        $requiredChecklistCount = Checklist::where('kategori_aktivitas_shift_id', $kategoriId)->count();
+        $submittedChecklistCount = AktivitasShift::query()
+            ->where('aktivitas_shifts.user_id', $userId)
+            ->whereDate('aktivitas_shifts.created_at', now()->today())
+            ->where('aktivitas_shifts.shift_id', 1)
+            ->join('checklists', 'aktivitas_shifts.checklist_id', '=', 'checklists.id')
+            ->where('checklists.kategori_aktivitas_shift_id', $kategoriId)
+            ->count();
+
+        // Cek jika sudah submit dan jumlahnya sesuai (atau sudah ada lebih dari 0)
+        if ($submittedChecklistCount > 0 && $submittedChecklistCount === $requiredChecklistCount) {
             Notification::make()
                 ->title('Gagal Submit')
-                ->body('Anda Telah Melakukan Submit Shift Pagi Hari Ini. Submit hanya diperbolehkan sekali per hari.')
+                ->body('Anda Telah Melakukan Submit Shift Pagi Hari Ini (Lengkap). Submit hanya diperbolehkan sekali per hari.')
                 ->danger()
                 ->send();
             return; // Menghentikan proses submit

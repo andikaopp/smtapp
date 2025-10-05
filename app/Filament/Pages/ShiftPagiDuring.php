@@ -8,8 +8,10 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -27,15 +29,45 @@ class ShiftPagiDuring extends Page
     protected static ?int $navigationSort = 2;
 
     public ?array $data = [];
+    public bool $hasSubmittedToday = false;
     public function mount(): void
     {
-        $this->form->fill();
+        // Pengecekan status submit (Sama seperti di awal submit())
+        $this->hasSubmittedToday = AktivitasShift::query()
+            ->where('user_id', Auth::id())
+            ->whereDate('created_at', now()->today())
+            ->where('shift_id', 1) // Sesuaikan dengan ID shift Anda
+            ->exists();
+
+        // Isi form hanya jika belum submit
+        if (!$this->hasSubmittedToday) {
+            $this->form->fill();
+        }
     }
 
     protected function getFormSchema(): array
     {
+        if ($this->hasSubmittedToday) {
+            return [
+                Section::make('Status Checklist Harian')
+                    ->icon('heroicon-o-check-circle') // Tambahkan ikon untuk visual
+                    ->description('Pengecekan ini hanya dapat dilakukan sekali sehari.')
+                    ->schema([
+                        TextEntry::make('submission_message')
+                            ->badge()
+                            ->label('Anda sudah berhasil melakukan submit Checklist During Shift Pagi untuk hari ini (' . now()->translatedFormat('d F Y') . '). Terima kasih!')
+                            ->color('primary')
+                    ])
+                    ->aside(false)
+                    ->heading('Pengisian Checklist Complete')
+                    ->collapsed(false)
+                    ->columns(1),
+            ];
+        }
+
         return [
             Repeater::make('checklists')
+                ->label('Silahkan Cheklist Data Di bawah ini')
                 ->statePath('data.checklists')
                 ->schema([
                     Toggle::make('is_checklist_id_checked')
@@ -55,7 +87,8 @@ class ShiftPagiDuring extends Page
                         ->toArray()
                 )
                 ->deletable(false)
-                ->addable(false),
+                ->addable(false)
+                ->reorderable(false),
         ];
     }
 

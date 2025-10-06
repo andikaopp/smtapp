@@ -17,23 +17,23 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class ShiftPagiDuring extends Page
+class ShiftPagiPost extends Page
 {
     use InteractsWithForms;
 
     protected static string|null|\BackedEnum $navigationIcon = 'heroicon-o-sun';
-    protected string $view = 'filament.pages.shift-pagi-during';
-    protected static ?string $title = 'Shift Pagi - During Shift';
-    protected static ?string $navigationLabel = 'Shift Pagi During';
+    protected string $view = 'filament.pages.shift-pagi-post';
+    protected static ?string $title = 'Shift Pagi - Post Shift';
+    protected static ?string $navigationLabel = 'Shift Pagi Post';
     protected static string|null|\UnitEnum $navigationGroup = 'Shift Pagi';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     public ?array $data = [];
     public bool $hasSubmittedToday = false;
     public function mount(): void
     {
         $userId = Auth::id();
-        $kategoriId = 2; //kategori_aktivitas_shift_id => During Shift
+        $kategoriId = 3; //kategori_aktivitas_shift_id => Post Shift
 
         $requiredChecklistCount = Checklist::query()->where('kategori_aktivitas_shift_id', $kategoriId)->count();
         $submittedChecklistCount = AktivitasShift::query()
@@ -62,9 +62,7 @@ class ShiftPagiDuring extends Page
                     ->description('Pengecekan ini hanya dapat dilakukan sekali sehari.')
                     ->schema([
                         TextEntry::make('submission_message')
-                            ->badge()
-                            ->label('Anda sudah berhasil melakukan submit Checklist During Shift Pagi untuk hari ini (' . now()->translatedFormat('d F Y') . '). Terima kasih!')
-                            ->color('primary')
+                            ->label('Anda sudah berhasil melakukan submit Checklist Post Shift Pagi untuk hari ini (' . now()->translatedFormat('d F Y') . '). Terima kasih!')
                     ])
                     ->aside(false)
                     ->heading('Pengisian Checklist Complete')
@@ -84,7 +82,7 @@ class ShiftPagiDuring extends Page
                 ])
                 ->columns(2)
                 ->default(
-                    Checklist::query()->where('kategori_aktivitas_shift_id', 2)
+                    Checklist::query()->where('kategori_aktivitas_shift_id', 3)
                         ->get(['id', 'todo'])
                         ->map(fn ($item) => [
                             'todo' => $item->todo,
@@ -103,7 +101,7 @@ class ShiftPagiDuring extends Page
     public function submit()
     {
         $userId = Auth::id();
-        $kategoriId = 2; // ID Kategori untuk During-Shift
+        $kategoriId = 3; // ID Kategori untuk During-Shift
 
         // --- VALIDASI KELENGKAPAN SUBMIT (diulang dari mount untuk keamanan) ---
         $requiredChecklistCount = Checklist::where('kategori_aktivitas_shift_id', $kategoriId)->count();

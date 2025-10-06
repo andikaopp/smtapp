@@ -93,7 +93,7 @@ class ShiftPagiPre extends Page
                             'todo' => $item->todo,
                             'checklist_id' => $item->id,
                             'user_id' => Auth::id(),
-                            'shift_id' => 2
+                            'shift_id' => 1
                         ])
                         ->toArray()
                 )

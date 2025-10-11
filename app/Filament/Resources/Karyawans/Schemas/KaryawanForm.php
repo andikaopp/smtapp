@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Karyawans\Schemas;
 
 use App\Models\Cabang;
+use App\Models\Karyawan;
 use App\Models\User;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -12,6 +13,8 @@ class KaryawanForm
 {
     public static function configure(Schema $schema): Schema
     {
+        $registeredUser = Karyawan::pluck('user_id')->unique();
+
         return $schema
             ->components([
                 TextInput::make('nama')
@@ -23,7 +26,7 @@ class KaryawanForm
                     ->options(Cabang::all()->pluck("nama_cabang", "id"))
                     ->required(),
                 Select::make('user_id')
-                    ->options(User::all()->pluck("name", "id"))
+                    ->options(User::query()->whereNotIn('id', $registeredUser)->pluck("name", "id"))
                     ->required(),
             ]);
     }

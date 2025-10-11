@@ -49,7 +49,8 @@ class RoleResource extends Resource
                     ->searchable(),
                 TextColumn::make('permissions.name')
                     ->searchable()
-                    ->badge(),
+                    ->badge()
+                    ->wrap(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

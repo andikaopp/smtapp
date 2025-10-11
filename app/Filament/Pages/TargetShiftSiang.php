@@ -22,6 +22,7 @@ class TargetShiftSiang extends Page
     protected static ?string $navigationLabel = 'Target';
 
     protected static ?string $title = 'Target Siang';
+    protected static ?int $navigationSort = 1;
     protected string $view = 'filament.pages.target-shift-siang';
 
     public ?array $data = [];
@@ -39,6 +40,11 @@ class TargetShiftSiang extends Page
         if (!$this->hasSubmittedToday) {
             $this->form->fill();
         }
+    }
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()->can('Menu Shift Siang');
     }
 
     protected function getFormSchema(): array

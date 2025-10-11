@@ -25,7 +25,7 @@ class ShiftPagiPre extends Page
     protected static ?string $title = 'Shift Pagi - Pre Shift';
     protected static ?string $navigationLabel = 'Shift Pagi Pre';
     protected static string|null|\UnitEnum $navigationGroup = 'Shift Pagi';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
     protected string $view = 'filament.pages.shift-pagi-pre';
 
     public ?array $data = [];
@@ -55,6 +55,11 @@ class ShiftPagiPre extends Page
         if (!$this->hasSubmittedToday) {
             $this->form->fill();
         }
+    }
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()->can('Menu Shift Pagi');
     }
 
     protected function getFormSchema(): array

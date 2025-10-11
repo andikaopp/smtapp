@@ -26,7 +26,7 @@ class ShiftPagiPost extends Page
     protected static ?string $title = 'Shift Pagi - Post Shift';
     protected static ?string $navigationLabel = 'Shift Pagi Post';
     protected static string|null|\UnitEnum $navigationGroup = 'Shift Pagi';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     public ?array $data = [];
     public bool $hasSubmittedToday = false;
@@ -50,6 +50,11 @@ class ShiftPagiPost extends Page
         if (!$this->hasSubmittedToday) {
             $this->form->fill();
         }
+    }
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()->can('Menu Shift Pagi');
     }
 
     protected function getFormSchema(): array

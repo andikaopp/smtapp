@@ -21,6 +21,7 @@ class TargetShiftPagi extends Page
     protected static ?string $navigationLabel = 'Target';
 
     protected static ?string $title = 'Target Pagi';
+    protected static ?int $navigationSort = 1;
     protected string $view = 'filament.pages.target-shift-pagi';
 
     public ?array $data = [];
@@ -38,6 +39,11 @@ class TargetShiftPagi extends Page
         if (!$this->hasSubmittedToday) {
             $this->form->fill();
         }
+    }
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()->can('Menu Shift Pagi');
     }
 
     protected function getFormSchema(): array

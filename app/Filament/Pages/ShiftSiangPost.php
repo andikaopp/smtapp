@@ -26,7 +26,7 @@ class ShiftSiangPost extends Page
     protected static ?string $title = 'Shift Siang - Post Shift';
     protected static ?string $navigationLabel = 'Shift Siang Post';
     protected static string|null|\UnitEnum $navigationGroup = 'Shift Siang';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     public ?array $data = [];
     public bool $hasSubmittedToday = false;
@@ -50,6 +50,11 @@ class ShiftSiangPost extends Page
         if (!$this->hasSubmittedToday) {
             $this->form->fill();
         }
+    }
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()->can('Menu Shift Siang');
     }
 
     protected function getFormSchema(): array

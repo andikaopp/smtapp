@@ -160,7 +160,7 @@ class TargetShiftPagi extends Page
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Target Siang Save Error: ' . $e->getMessage());
+            Log::error('Target Pagi Save Error: ' . $e->getMessage());
             Notification::make()
                 ->title('Penyimpanan Gagal')
                 ->body('Terjadi kesalahan saat menyimpan data. Silakan coba lagi.')

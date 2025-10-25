@@ -43,7 +43,7 @@ class ActualShiftSiang extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()->can('Menu Shift Siang');
+        return auth()->user()->can('Disabled');
     }
 
     protected function getFormSchema(): array

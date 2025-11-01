@@ -1,126 +1,548 @@
 <x-filament-panels::page>
-    {{--
-        Anda bisa menambahkan style kustom di sini jika diperlukan.
-        Filament sudah menggunakan Tailwind CSS, jadi class utility bisa langsung dipakai.
-    --}}
-    <style>
-        th, td {
-            white-space: nowrap; /* Mencegah teks pada header dan sel turun ke baris baru */
-        }
-    </style>
 
-    {{--
-        Struktur HTML dari laporan Anda dimulai di sini.
-        Saya membungkusnya dalam div dengan class fi-section untuk konsistensi tampilan Filament.
-    --}}
-    <div class="fi-section overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+    {{-- BAGIAN FILTER --}}
+    <x-filament::section :collapsible="true">
+        <x-slot name="heading">
+            Filter Laporan
+        </x-slot>
 
-        {{-- Wrapper untuk membuat tabel bisa di-scroll secara horizontal di layar kecil --}}
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-sm border-collapse">
-                <thead class="bg-gray-50 dark:bg-gray-800">
-                <!-- Baris Header Utama (Opening, Siang) -->
-                <tr>
-                    <th rowspan="2" class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-700 dark:text-gray-200"></th>
-                    <th colspan="7" class="border border-gray-300 dark:border-gray-600 p-2 font-bold text-gray-800 dark:text-gray-100 bg-yellow-300 dark:bg-yellow-700">Opening</th>
-                    <th colspan="7" class="border border-gray-300 dark:border-gray-600 p-2 font-bold text-gray-800 dark:text-gray-100 bg-cyan-300 dark:bg-cyan-700">Siang</th>
-                </tr>
-                <!-- Baris Header Detail Kolom -->
-                <tr>
-                    <!-- Kolom untuk Sesi "Opening" -->
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Target Omset Global</th>
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Target Omset Retail</th>
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Actual Omset Retail</th>
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Achievement Retail %</th>
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Target Omset Pesanan</th>
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Actual Omset Pesanan</th>
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Achievement Pesanan %</th>
+        <form wire:submit="loadReport" class="space-y-4">
+            {{ $this->form }}
 
-                    <!-- Kolom untuk Sesi "Siang" -->
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Actual Omset Global</th>
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Target Omset Retail</th>
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Actual Omset Retail</th>
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Achievement Retail %</th>
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Target Omset Pesanan</th>
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Actual Omset Pesanan</th>
-                    <th class="border border-gray-300 dark:border-gray-600 p-2 font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">Achievement Pesanan %</th>
-                </tr>
-                </thead>
-                <tbody class="text-gray-700 dark:text-gray-200">
-                <!-- Baris Data (Nantinya bisa di-loop dari data dinamis) -->
-                <tr>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 font-medium bg-gray-50 dark:bg-gray-800">Omset</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataTargetPagi?->omset_global }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataTargetPagi?->omset_retail }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataActualPagi?->actual_omset_retail }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ ($dataActualPagi?->actual_omset_retail/$dataTargetPagi?->omset_retail)*100 }} %</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataTargetPagi?->omset_pesanan }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataActualPagi?->actual_omset_pesanan }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ ($dataActualPagi?->actual_omset_pesanan/$dataTargetPagi?->omset_pesanan)*100 }} %</td>
+            <x-filament::button type="submit" wire:loading.attr="disabled">
+                <span wire:loading.remove>
+                    Tampilkan Laporan
+                </span>
+                <span wire:loading>
+                    Memuat...
+                </span>
+            </x-filament::button>
+        </form>
+    </x-filament::section>
 
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataActualSiang?->actual_omset_global }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataTargetSiang?->omset_retail }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataActualSiang?->actual_omset_retail }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ ($dataActualSiang?->actual_omset_retail/$dataTargetSiang?->omset_retail)*100 }} %</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataTargetSiang?->omset_pesanan }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataActualSiang?->actual_omset_pesanan }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ ceil(($dataActualSiang?->actual_omset_pesanan/$dataTargetSiang?->omset_pesanan)*100) }} %</td>
-                </tr>
-                <tr>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 font-medium bg-gray-50 dark:bg-gray-800">TC</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataTargetPagi?->tc_global }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataTargetPagi?->tc_retail }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataActualPagi?->actual_tc_retail }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataTargetPagi?->tc_pesanan }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataActualPagi?->actual_tc_pesanan }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
+    {{-- BAGIAN LAPORAN (HANYA MUNCUL JIKA ADA DATA) --}}
+    @if ($reportData)
+        <x-filament::section>
+            <div class="space-y-4">
 
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataActualSiang?->actual_tc_global }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataActualSiang?->actual_tc_retail }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataActualSiang?->actual_tc_pesanan }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                </tr>
-                <tr>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 font-medium bg-gray-50 dark:bg-gray-800">Target Lainnya</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataTargetPagi?->target_lainnya }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataActualPagi?->actual_target_lainnya }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
+                {{-- HEADER LAPORAN --}}
+                <div class="print:break-inside-avoid">
+                    <h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                        Shift Management
+                    </h2>
 
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataTargetSiang?->target_lainnya }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right">{{ $dataActualSiang?->actual_target_lainnya }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 text-right"></td>
-                </tr>
-                <tr>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 font-medium bg-gray-50 dark:bg-gray-800">Nama Staff/Leader</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2" colspan="7">{{ $dataTargetPagi?->user->name }}</td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2" colspan="7">{{ $dataTargetSiang?->user->name }}</td>
-                </tr>
-                <tr>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2 font-medium bg-gray-50 dark:bg-gray-800">All day Omset/target</td>
-                    <td colspan="4" class="border border-gray-300 dark:border-gray-600 p-2 bg-gray-200 dark:bg-gray-700"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2"></td>
-                    <td colspan="4" class="border border-gray-300 dark:border-gray-600 p-2 bg-gray-200 dark:bg-gray-700"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2"></td>
-                    <td class="border border-gray-300 dark:border-gray-600 p-2"></td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+                    {{-- Garis pemisah --}}
+                    <hr class="my-4 border-t border-gray-300 dark:border-gray-700">
+
+                    {{-- Meta Data Laporan --}}
+                    <div class="flex flex-col text-sm text-gray-400 dark:text-gray-300 sm:flex-row sm:justify-between">
+                        <div class="space-y-1">
+                            <p><span class="font-medium text-gray-600 dark:text-gray-400">Completed by:</span> {{ $reportData['completed_by'] }}</p>
+                        </div>
+                        <div class="mt-1 text-left sm:mt-0 sm:text-right">
+                            <p><span class="font-medium text-gray-600 dark:text-gray-400">Date:</span> {{ $reportData['date'] }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Garis pemisah kedua --}}
+                <hr class="my-2 border-t border-gray-300 dark:border-gray-700">
+
+                <div class="mt-10 overflow-x-auto">
+                    <p>Shift Pagi Kebersihan</p>
+                    <hr class="my-2 border-t border-gray-300 dark:border-gray-700">
+                    <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+
+                        {{-- Ini menggantikan <thead> lama --}}
+                        <tbody class="divide-y divide-gray-300 dark:divide-gray-700">
+                        <tr class="print:break-inside-avoid">
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Activity
+                            </td>
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Karyawan
+                            </td>
+                            <td class="w-1/4 px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Checklist
+                            </td>
+                        </tr>
+
+                        {{-- Loop data aktivitas --}}
+                        @forelse ($reportData['activities'] as $activity)
+                            @if($activity['kategori_aktivitas_shift_id'] == "4" && $activity['shift_id'] == "1")
+                            <tr class="print:break-inside-avoid">
+                                <td class="px-6 py-3 align-top">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ $activity['name'] }}
+                                    </div>
+                                    <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                        <strong>Komentar:</strong> {{ $activity['comment'] }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-3 align-top">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ $activity['karyawan'] }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-3 text-right align-top">
+                                    {{--
+                                      STYLE BARU: Teks underline, bukan badge
+                                      Berdasarkan screenshot 'image_d3b5e5.png'
+                                    --}}
+                                    <span class="text-sm font-medium text-gray-900 underline dark:text-white">
+                                            {{ $activity['status'] }} {{-- Asumsi statusnya "Ya" atau "Tidak" --}}
+                                        </span>
+                                </td>
+                            </tr>
+                            @endif
+                        @empty
+                            <tr>
+                                <td colspan="2" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    Tidak ada aktivitas ditemukan.
+                                </td>
+                            </tr>
+                        @endforelse
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-10 overflow-x-auto">
+                    <p>Shift Pagi - Pre Shift</p>
+                    <hr class="my-2 border-t border-gray-300 dark:border-gray-700">
+                    <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+
+                        {{-- Ini menggantikan <thead> lama --}}
+                        <tbody class="divide-y divide-gray-300 dark:divide-gray-700">
+                        <tr class="print:break-inside-avoid">
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Activity
+                            </td>
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Karyawan
+                            </td>
+                            <td class="w-1/4 px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Checklist
+                            </td>
+                        </tr>
+
+                        {{-- Loop data aktivitas --}}
+                        @forelse ($reportData['activities'] as $activity)
+                            @if($activity['kategori_aktivitas_shift_id'] == "1" && $activity['shift_id'] == "1")
+                                <tr class="print:break-inside-avoid">
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['name'] }}
+                                        </div>
+                                        <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                            <strong>Komentar:</strong> {{ $activity['comment'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['karyawan'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 text-right align-top">
+                                        {{--
+                                          STYLE BARU: Teks underline, bukan badge
+                                          Berdasarkan screenshot 'image_d3b5e5.png'
+                                        --}}
+                                        <span class="text-sm font-medium text-gray-900 underline dark:text-white">
+                                            {{ $activity['status'] }} {{-- Asumsi statusnya "Ya" atau "Tidak" --}}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endif
+                        @empty
+                            <tr>
+                                <td colspan="2" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    Tidak ada aktivitas ditemukan.
+                                </td>
+                            </tr>
+                        @endforelse
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-10 overflow-x-auto">
+                    <p>Shift Pagi - During Shift</p>
+                    <hr class="my-2 border-t border-gray-300 dark:border-gray-700">
+                    <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+
+                        {{-- Ini menggantikan <thead> lama --}}
+                        <tbody class="divide-y divide-gray-300 dark:divide-gray-700">
+                        <tr class="print:break-inside-avoid">
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Activity
+                            </td>
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Karyawan
+                            </td>
+                            <td class="w-1/4 px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Checklist
+                            </td>
+                        </tr>
+
+                        {{-- Loop data aktivitas --}}
+                        @forelse ($reportData['activities'] as $activity)
+                            @if($activity['kategori_aktivitas_shift_id'] == "2" && $activity['shift_id'] == "1")
+                                <tr class="print:break-inside-avoid">
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['name'] }}
+                                        </div>
+                                        <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                            <strong>Komentar:</strong> {{ $activity['comment'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['karyawan'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 text-right align-top">
+                                        {{--
+                                          STYLE BARU: Teks underline, bukan badge
+                                          Berdasarkan screenshot 'image_d3b5e5.png'
+                                        --}}
+                                        <span class="text-sm font-medium text-gray-900 underline dark:text-white">
+                                            {{ $activity['status'] }} {{-- Asumsi statusnya "Ya" atau "Tidak" --}}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endif
+                        @empty
+                            <tr>
+                                <td colspan="2" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    Tidak ada aktivitas ditemukan.
+                                </td>
+                            </tr>
+                        @endforelse
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-10 overflow-x-auto">
+                    <p>Shift Pagi - Post Shift</p>
+                    <hr class="my-2 border-t border-gray-300 dark:border-gray-700">
+                    <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+
+                        {{-- Ini menggantikan <thead> lama --}}
+                        <tbody class="divide-y divide-gray-300 dark:divide-gray-700">
+                        <tr class="print:break-inside-avoid">
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Activity
+                            </td>
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Karyawan
+                            </td>
+                            <td class="w-1/4 px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Checklist
+                            </td>
+                        </tr>
+
+                        {{-- Loop data aktivitas --}}
+                        @forelse ($reportData['activities'] as $activity)
+                            @if($activity['kategori_aktivitas_shift_id'] == "3" && $activity['shift_id'] == "1")
+                                <tr class="print:break-inside-avoid">
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['name'] }}
+                                        </div>
+                                        <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                            <strong>Komentar:</strong> {{ $activity['comment'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['karyawan'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 text-right align-top">
+                                        {{--
+                                          STYLE BARU: Teks underline, bukan badge
+                                          Berdasarkan screenshot 'image_d3b5e5.png'
+                                        --}}
+                                        <span class="text-sm font-medium text-gray-900 underline dark:text-white">
+                                            {{ $activity['status'] }} {{-- Asumsi statusnya "Ya" atau "Tidak" --}}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endif
+                        @empty
+                            <tr>
+                                <td colspan="2" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    Tidak ada aktivitas ditemukan.
+                                </td>
+                            </tr>
+                        @endforelse
+
+                        </tbody>
+                    </table>
+                </div>
+
+
+                {{-- Garis pemisah kedua --}}
+                <hr class="my-2 border-t border-gray-300 dark:border-gray-700">
+
+                <div class="mt-10 overflow-x-auto">
+                    <p>Shift Siang Kebersihan</p>
+                    <hr class="my-2 border-t border-gray-300 dark:border-gray-700">
+                    <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+
+                        {{-- Ini menggantikan <thead> lama --}}
+                        <tbody class="divide-y divide-gray-300 dark:divide-gray-700">
+                        <tr class="print:break-inside-avoid">
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Activity
+                            </td>
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Karyawan
+                            </td>
+                            <td class="w-1/4 px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Checklist
+                            </td>
+                        </tr>
+
+                        {{-- Loop data aktivitas --}}
+                        @forelse ($reportData['activities'] as $activity)
+                            @if($activity['kategori_aktivitas_shift_id'] == "5" && $activity['shift_id'] == "2")
+                                <tr class="print:break-inside-avoid">
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['name'] }}
+                                        </div>
+                                        <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                            <strong>Komentar:</strong> {{ $activity['comment'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['karyawan'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 text-right align-top">
+                                        {{--
+                                          STYLE BARU: Teks underline, bukan badge
+                                          Berdasarkan screenshot 'image_d3b5e5.png'
+                                        --}}
+                                        <span class="text-sm font-medium text-gray-900 underline dark:text-white">
+                                            {{ $activity['status'] }} {{-- Asumsi statusnya "Ya" atau "Tidak" --}}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endif
+                        @empty
+                            <tr>
+                                <td colspan="2" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    Tidak ada aktivitas ditemukan.
+                                </td>
+                            </tr>
+                        @endforelse
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-10 overflow-x-auto">
+                    <p>Shift Siang - Pre Shift</p>
+                    <hr class="my-2 border-t border-gray-300 dark:border-gray-700">
+                    <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+
+                        {{-- Ini menggantikan <thead> lama --}}
+                        <tbody class="divide-y divide-gray-300 dark:divide-gray-700">
+                        <tr class="print:break-inside-avoid">
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Activity
+                            </td>
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Karyawan
+                            </td>
+                            <td class="w-1/4 px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Checklist
+                            </td>
+                        </tr>
+
+                        {{-- Loop data aktivitas --}}
+                        @forelse ($reportData['activities'] as $activity)
+                            @if($activity['kategori_aktivitas_shift_id'] == "1" && $activity['shift_id'] == "2")
+                                <tr class="print:break-inside-avoid">
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['name'] }}
+                                        </div>
+                                        <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                            <strong>Komentar:</strong> {{ $activity['comment'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['karyawan'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 text-right align-top">
+                                        {{--
+                                          STYLE BARU: Teks underline, bukan badge
+                                          Berdasarkan screenshot 'image_d3b5e5.png'
+                                        --}}
+                                        <span class="text-sm font-medium text-gray-900 underline dark:text-white">
+                                            {{ $activity['status'] }} {{-- Asumsi statusnya "Ya" atau "Tidak" --}}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endif
+                        @empty
+                            <tr>
+                                <td colspan="2" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    Tidak ada aktivitas ditemukan.
+                                </td>
+                            </tr>
+                        @endforelse
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-10 overflow-x-auto">
+                    <p>Shift Siang - During Shift</p>
+                    <hr class="my-2 border-t border-gray-300 dark:border-gray-700">
+                    <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+
+                        {{-- Ini menggantikan <thead> lama --}}
+                        <tbody class="divide-y divide-gray-300 dark:divide-gray-700">
+                        <tr class="print:break-inside-avoid">
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Activity
+                            </td>
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Karyawan
+                            </td>
+                            <td class="w-1/4 px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Checklist
+                            </td>
+                        </tr>
+
+                        {{-- Loop data aktivitas --}}
+                        @forelse ($reportData['activities'] as $activity)
+                            @if($activity['kategori_aktivitas_shift_id'] == "2" && $activity['shift_id'] == "2")
+                                <tr class="print:break-inside-avoid">
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['name'] }}
+                                        </div>
+                                        <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                            <strong>Komentar:</strong> {{ $activity['comment'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['karyawan'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 text-right align-top">
+                                        {{--
+                                          STYLE BARU: Teks underline, bukan badge
+                                          Berdasarkan screenshot 'image_d3b5e5.png'
+                                        --}}
+                                        <span class="text-sm font-medium text-gray-900 underline dark:text-white">
+                                            {{ $activity['status'] }} {{-- Asumsi statusnya "Ya" atau "Tidak" --}}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endif
+                        @empty
+                            <tr>
+                                <td colspan="2" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    Tidak ada aktivitas ditemukan.
+                                </td>
+                            </tr>
+                        @endforelse
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-10 overflow-x-auto">
+                    <p>Shift Siang - Post Shift</p>
+                    <hr class="my-2 border-t border-gray-300 dark:border-gray-700">
+                    <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+
+                        {{-- Ini menggantikan <thead> lama --}}
+                        <tbody class="divide-y divide-gray-300 dark:divide-gray-700">
+                        <tr class="print:break-inside-avoid">
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Activity
+                            </td>
+                            <td class="w-3/4 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Karyawan
+                            </td>
+                            <td class="w-1/4 px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Checklist
+                            </td>
+                        </tr>
+
+                        {{-- Loop data aktivitas --}}
+                        @forelse ($reportData['activities'] as $activity)
+                            @if($activity['kategori_aktivitas_shift_id'] == "3" && $activity['shift_id'] == "2")
+                                <tr class="print:break-inside-avoid">
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['name'] }}
+                                        </div>
+                                        <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                            <strong>Komentar:</strong> {{ $activity['comment'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 align-top">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $activity['karyawan'] }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 text-right align-top">
+                                        {{--
+                                          STYLE BARU: Teks underline, bukan badge
+                                          Berdasarkan screenshot 'image_d3b5e5.png'
+                                        --}}
+                                        <span class="text-sm font-medium text-gray-900 underline dark:text-white">
+                                            {{ $activity['status'] }} {{-- Asumsi statusnya "Ya" atau "Tidak" --}}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endif
+                        @empty
+                            <tr>
+                                <td colspan="2" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    Tidak ada aktivitas ditemukan.
+                                </td>
+                            </tr>
+                        @endforelse
+
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </x-filament::section>
+
+        {{-- Tampilan jika data belum difilter --}}
+    @else
+        <x-filament::section>
+            <div class="py-12 text-center">
+                <x-filament::icon
+                    icon="heroicon-o-document-magnifying-glass"
+                    class="mx-auto h-12 w-12 text-gray-400"
+                />
+                <h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
+                    Belum Ada Laporan
+                </h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Silakan pilih filter di atas dan klik "Tampilkan Laporan" untuk memuat data.
+                </p>
+            </div>
+        </x-filament::section>
+    @endif
 
 </x-filament-panels::page>

@@ -42,6 +42,11 @@ class TargetShiftSiang extends Page
         }
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public static function canAccess(): bool
     {
         return auth()->user()->can('Disabled');

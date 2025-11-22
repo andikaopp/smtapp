@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\AktivitasShift;
 use App\Models\Checklist;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -84,8 +85,32 @@ class ShiftPagiDuring extends Page
                 ->statePath('data.checklists')
                 ->schema([
                     Toggle::make('is_checklist_id_checked')
-                        ->label(fn (Get $get) => $get('todo') ?? 'Checklist'),
+                        ->label(fn (Get $get) => $get('todo') ?? 'Checklist')
+                        ->inline(false),
                     TextInput::make('comment')->label('Keterangan'),
+
+                    // --- PERBAIKAN DISINI ---
+                    FileUpload::make('photo')
+                        ->label('Foto Bukti')
+                        ->image() // Validasi hanya gambar
+                        ->imageEditor() // User bisa crop/rotate sebelum upload
+
+                        // 1. Setting Storage
+                        ->disk('public')
+                        ->directory('aktivitas-shift-photos')
+
+                        // 2. Setting Kompresi & Resize (Agar file kecil < 100kb)
+                        // Mengecilkan gambar agar sisi terpanjang max 1024px (Cukup jelas untuk bukti)
+                        ->imageResizeTargetWidth('1024')
+                        ->imageResizeTargetHeight('1024')
+                        ->imageResizeMode('contain') // Menjaga aspek rasio
+
+                        // 3. Setting Mobile/Kamera
+                        // 'capture' => 'environment' menyarankan browser HP membuka kamera belakang
+                        ->extraInputAttributes(['capture' => 'environment', 'accept' => 'image/*'])
+
+                        ->columnSpan(2),
+                    // ------------------------
                 ])
                 ->columns(2)
                 ->default(
@@ -95,7 +120,8 @@ class ShiftPagiDuring extends Page
                             'todo' => $item->todo,
                             'checklist_id' => $item->id,
                             'user_id' => Auth::id(),
-                            'shift_id' => 1
+                            'shift_id' => 1,
+                            'photo' => null,
                         ])
                         ->toArray()
                 )
@@ -164,6 +190,7 @@ class ShiftPagiDuring extends Page
                     'shift_id' => 1,
                     'comment' => $item['comment'] ?? null,
                     'is_checklist_id_checked' => $item['is_checklist_id_checked'],
+                    'photo' => $item['photo'] ?? null,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -179,9 +206,7 @@ class ShiftPagiDuring extends Page
                 ->success()
                 ->send();
 
-            // 4. Opsional: Redirect atau Reset Form
-            // Redirect ke halaman lain setelah selesai, atau tetap di halaman ini.
-            // return redirect()->to(ShiftPagiDuring::getUrl());
+            $this->redirect(static::getUrl());
 
         } catch (\Exception $e) {
             DB::rollBack();

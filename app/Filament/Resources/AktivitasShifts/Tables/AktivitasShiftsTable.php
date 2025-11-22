@@ -6,6 +6,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -17,6 +18,8 @@ class AktivitasShiftsTable
             ->columns([
                 TextColumn::make('user.name')
                     ->searchable(),
+                TextColumn::make('user.karyawan.cabang.nama_cabang')
+                    ->searchable(),
                 TextColumn::make('shift.name')
                     ->searchable(),
                 TextColumn::make('checklist.kategoriAktivitasShift.kategori')
@@ -27,8 +30,8 @@ class AktivitasShiftsTable
                     ->searchable(),
                 IconColumn::make('is_checklist_id_checked')
                     ->boolean(),
-                TextColumn::make('photo')
-                    ->searchable(),
+                ImageColumn::make('photo')
+                    ->disk('public'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

@@ -7,6 +7,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Grid;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -22,12 +23,16 @@ class TargetReport extends Page
     protected static ?int $navigationSort = 1;
     protected string $view = 'filament.pages.target-report';
     public ?array $data = [];
-    public ?array $reportData = null;
+
+    // Ubah reportData menjadi array list (bukan null by default, tapi array kosong)
+    public ?array $reportData = [];
 
     public function mount(): void
     {
+        // Default: Tanggal 1 bulan ini sampai hari ini
         $this->form->fill([
-            'selected_date' => now()->format('Y-m-d')
+            'start_date' => now()->startOfMonth()->format('Y-m-d'),
+            'end_date'   => now()->format('Y-m-d'),
         ]);
     }
 
@@ -39,16 +44,24 @@ class TargetReport extends Page
     protected function getFormSchema(): array
     {
         return [
-            DatePicker::make('selected_date')
-                ->label('Tanggal Laporan')
-                ->required(),
-            Select::make('cabang_id')
-                ->label('Pilih Cabang')
-                ->options(
-                    Cabang::orderBy('nama_cabang')->pluck('nama_cabang', 'id')
-                )
-                ->searchable()
-                ->required(),
+            Grid::make(3) // Menggunakan Grid agar rapi 3 kolom
+            ->schema([
+                DatePicker::make('start_date')
+                    ->label('Tanggal Mulai')
+                    ->required()
+                    ->maxDate(now()),
+                DatePicker::make('end_date')
+                    ->label('Tanggal Selesai')
+                    ->required()
+                    ->maxDate(now()),
+                Select::make('cabang_id')
+                    ->label('Pilih Cabang')
+                    ->options(
+                        Cabang::orderBy('nama_cabang')->pluck('nama_cabang', 'id')
+                    )
+                    ->searchable()
+                    ->required(),
+            ]),
         ];
     }
 
@@ -60,7 +73,9 @@ class TargetReport extends Page
     public function loadReport(): void
     {
         $formData = $this->form->getState();
-        $selectedDate = Carbon::parse($formData['selected_date']);
+        $startDate = Carbon::parse($formData['start_date']);
+        $endDate = Carbon::parse($formData['end_date']);
+
         $query = DB::table('aktivitas_shifts')
             ->join('users', 'aktivitas_shifts.user_id', '=', 'users.id')
             ->join('karyawans', 'users.id', '=', 'karyawans.user_id')
@@ -70,90 +85,72 @@ class TargetReport extends Page
             ->join('kategori_aktivitas_shifts', 'checklists.kategori_aktivitas_shift_id', '=', 'kategori_aktivitas_shifts.id')
             ->where('cabangs.id', $formData['cabang_id'])
 
-            // --- FILTER DINAMIS ---
-            // Mengganti curdate() dengan data dari filter form
-            ->whereDate('aktivitas_shifts.created_at', $selectedDate);
+            // --- FILTER DINAMIS RANGE TANGGAL ---
+            ->whereDate('aktivitas_shifts.created_at', '>=', $startDate)
+            ->whereDate('aktivitas_shifts.created_at', '<=', $endDate)
 
-            // --- FILTER HARDCODED (Sesuai query Anda) ---
-//            ->where('kategori_aktivitas_shifts.id', 5);
+            // Urutkan berdasarkan tanggal aktivitas
+            ->orderBy('aktivitas_shifts.created_at', 'asc');
 
-        // 3. Ambil kolom (select) yang kita butuhkan
+        // 3. Ambil kolom (select)
+        // PENTING: Tambahkan aktivitas_shifts.created_at untuk grouping tanggal
         $results = $query->select(
-        // Data untuk header
             'users.name as completed_by',
             'shifts.id as shift_id',
             'shifts.name as shift_name',
-
-            // Data untuk mapping tabel
             'checklists.todo',
             'aktivitas_shifts.comment',
             'aktivitas_shifts.photo',
             'aktivitas_shifts.is_checklist_id_checked',
+            'aktivitas_shifts.created_at as activity_date', // Alias untuk tanggal
             'kategori_aktivitas_shifts.id as kategori_aktivitas_shift_id',
         )->get();
 
-
         // 4. Handle jika data tidak ditemukan
         if ($results->isEmpty()) {
-            // Tampilkan notifikasi
             \Filament\Notifications\Notification::make()
                 ->title('Data tidak ditemukan')
-                ->body('Tidak ada data laporan untuk tanggal dan kriteria yang dipilih.')
+                ->body('Tidak ada data laporan untuk rentang tanggal dan kriteria yang dipilih.')
                 ->warning()
                 ->send();
 
-            // Kosongkan reportData agar view kembali ke "Belum Ada Laporan"
-            $this->reportData = null;
+            $this->reportData = [];
             return;
         }
 
-        // 5. Lakukan MAPPING sesuai permintaan Anda
-        $activities = $results->map(function ($item) {
-            return [
-                // 'name' di view (kiri) => 'checklists.todo' dari query (kanan)
-                'name' => $item->todo,
-
-                // 'comment' di view (kiri) => 'comment' dari query (kanan)
-                'comment' => $item->comment,
-                'photo' => $item->photo,
-
-                // 'status' di view (kiri) => 'is_checklist_id_checked' dari query (kanan)
-                // Kita ubah boolean (1/0) menjadi string "Ya" / "Tidak"
-                'status' => $item->is_checklist_id_checked ? 'Ya' : 'Tidak',
-                'karyawan' => $item->completed_by,
-                'kategori_aktivitas_shift_id' => $item->kategori_aktivitas_shift_id,
-                'shift_id' => $item->shift_id,
-            ];
+        // 5. GROUPING Data Berdasarkan Tanggal
+        // Kita group by format Y-m-d agar jam tidak memisahkan grup
+        $groupedResults = $results->groupBy(function ($item) {
+            return Carbon::parse($item->activity_date)->format('Y-m-d');
         });
 
-        // 6. Ambil data header dari baris pertama (karena semuanya sama)
-        $firstResult = $results->first();
+        $finalReport = [];
 
-        // (Data dummy untuk contoh)
-        $dummyActivities = [
-            [
-                'name' => 'Pintu dan area kaca depan bersih tanpa bekas sidik jari',
-                'comment' => 'Buat shift terakhir harap selalu membersihkan juga yaa',
-                'status' => 'Ya'
-            ],
-            [
-                'name' => 'Lantai area lobby sudah dipel dan wangi',
-                'comment' => 'Stok pewangi lantai menipis',
-                'status' => 'Ya'
-            ],
-            [
-                'name' => 'Kamar mandi bersih dan tidak berbau',
-                'comment' => 'Perlu pengecekan berkala',
-                'status' => 'Tidak'
-            ],
-        ];
+        foreach ($groupedResults as $dateKey => $items) {
+            // Mapping activities per tanggal
+            $activities = $items->map(function ($item) {
+                return [
+                    'name' => $item->todo,
+                    'comment' => $item->comment,
+                    'photo' => $item->photo,
+                    'status' => $item->is_checklist_id_checked ? 'Ya' : 'Tidak',
+                    'karyawan' => $item->completed_by,
+                    'kategori_aktivitas_shift_id' => $item->kategori_aktivitas_shift_id,
+                    'shift_id' => $item->shift_id,
+                ];
+            });
 
-        // Set properti $reportData.
-        // Blade akan otomatis mendeteksi perubahan ini dan menampilkan laporannya.
-        $this->reportData = [
-            'completed_by' => Auth::user()['name'], // Ganti dengan data dinamis jika perlu
-            'date' => $selectedDate->format('d F Y'),
-            'activities' => $activities, // Hasil query Anda
-        ];
+            // Ambil completed_by dari item pertama di tanggal tersebut (asumsi shift management per hari)
+            // Jika user bisa beda-beda per item, logic ini tetap aman karena tabel menampilkan kolom karyawan per baris
+            $firstItem = $items->first();
+
+            $finalReport[] = [
+                'date_label' => Carbon::parse($dateKey)->isoFormat('dddd, D MMMM Y'), // Format Cantik: Senin, 1 November 2025
+                'completed_by' => Auth::user()['name'], // Atau ambil dari $firstItem->completed_by jika ingin nama pelapor asli
+                'activities' => $activities,
+            ];
+        }
+
+        $this->reportData = $finalReport;
     }
 }

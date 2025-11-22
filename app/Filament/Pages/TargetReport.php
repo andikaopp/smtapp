@@ -2,11 +2,13 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Cabang;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class TargetReport extends Page
@@ -40,6 +42,13 @@ class TargetReport extends Page
             DatePicker::make('selected_date')
                 ->label('Tanggal Laporan')
                 ->required(),
+            Select::make('cabang_id')
+                ->label('Pilih Cabang')
+                ->options(
+                    Cabang::orderBy('nama_cabang')->pluck('nama_cabang', 'id')
+                )
+                ->searchable()
+                ->required(),
         ];
     }
 
@@ -54,9 +63,12 @@ class TargetReport extends Page
         $selectedDate = Carbon::parse($formData['selected_date']);
         $query = DB::table('aktivitas_shifts')
             ->join('users', 'aktivitas_shifts.user_id', '=', 'users.id')
+            ->join('karyawans', 'users.id', '=', 'karyawans.user_id')
+            ->join('cabangs', 'karyawans.cabang_id', '=', 'cabangs.id')
             ->join('shifts', 'aktivitas_shifts.shift_id', '=', 'shifts.id')
             ->join('checklists', 'aktivitas_shifts.checklist_id', '=', 'checklists.id')
             ->join('kategori_aktivitas_shifts', 'checklists.kategori_aktivitas_shift_id', '=', 'kategori_aktivitas_shifts.id')
+            ->where('cabangs.id', $formData['cabang_id'])
 
             // --- FILTER DINAMIS ---
             // Mengganti curdate() dengan data dari filter form
@@ -75,6 +87,7 @@ class TargetReport extends Page
             // Data untuk mapping tabel
             'checklists.todo',
             'aktivitas_shifts.comment',
+            'aktivitas_shifts.photo',
             'aktivitas_shifts.is_checklist_id_checked',
             'kategori_aktivitas_shifts.id as kategori_aktivitas_shift_id',
         )->get();
@@ -102,6 +115,7 @@ class TargetReport extends Page
 
                 // 'comment' di view (kiri) => 'comment' dari query (kanan)
                 'comment' => $item->comment,
+                'photo' => $item->photo,
 
                 // 'status' di view (kiri) => 'is_checklist_id_checked' dari query (kanan)
                 // Kita ubah boolean (1/0) menjadi string "Ya" / "Tidak"
@@ -137,7 +151,7 @@ class TargetReport extends Page
         // Set properti $reportData.
         // Blade akan otomatis mendeteksi perubahan ini dan menampilkan laporannya.
         $this->reportData = [
-            'completed_by' => 'Admin', // Ganti dengan data dinamis jika perlu
+            'completed_by' => Auth::user()['name'], // Ganti dengan data dinamis jika perlu
             'date' => $selectedDate->format('d F Y'),
             'activities' => $activities, // Hasil query Anda
         ];

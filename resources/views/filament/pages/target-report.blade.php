@@ -78,6 +78,18 @@
                                     <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                                         <strong>Komentar:</strong> {{ $activity['comment'] }}
                                     </div>
+                                    <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                        <strong>Photo</strong>
+                                        @if($activity['photo'] == null)
+                                            <p>-</p>
+                                        @else
+                                            <img
+                                                src="{{ asset('storage/' . $activity['photo']) }}"
+                                                class="w-24 h-24 rounded-md object-cover cursor-pointer mb-2"
+                                                @click="$dispatch('open-image', { src: '{{ asset('storage/' . $activity['photo']) }}' })"
+                                            />
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-6 py-3 align-top">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white">
@@ -544,5 +556,26 @@
             </div>
         </x-filament::section>
     @endif
+    <div
+        x-data="{ open: false, imageSrc: '' }"
+        x-on:open-image.window="
+        imageSrc = $event.detail.src;
+        open = true;
+    "
+    >
+        <!-- Modal -->
+        <div
+            x-show="open"
+            x-transition.opacity
+            class="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+            @click.self="open = false"
+        >
+            <img
+                :src="imageSrc"
+                class="max-w-[90%] max-h-[90%] rounded-lg shadow-lg"
+                x-transition.scale.50
+            >
+        </div>
+    </div>
 
 </x-filament-panels::page>
